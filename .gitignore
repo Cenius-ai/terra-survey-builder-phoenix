@@ -1,0 +1,20 @@
+# Elixir / Mix
+_build/
+deps/
+*.db
+*.db-*
+
+# Environment
+.env
+
+# Assets
+priv/static/assets/
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
