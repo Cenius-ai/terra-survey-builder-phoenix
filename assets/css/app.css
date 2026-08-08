@@ -1,0 +1,181 @@
+/* Manrope — self-hosted font faces */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/manrope-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/manrope-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/manrope-700.woff2') format('woff2');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --card: #fffeff;
+    --ring: #db3e98;
+    --muted: #f1ebed;
+    --accent: #db3e98;
+    --border: #e2dcdf;
+    --primary: #db3e98;
+    --on-accent: #111111;
+    --secondary: #f1ebed;
+    --background: #fff8fb;
+    --foreground: #181014;
+    --on-primary: #111111;
+    --destructive: #c9302d;
+    --on-secondary: #181014;
+    --on-destructive: #ffffff;
+    --card-foreground: #181014;
+    --muted-foreground: #6b6064;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --card: #1a1518;
+    --ring: #db3e98;
+    --muted: #2a2226;
+    --accent: #db3e98;
+    --border: #32292d;
+    --primary: #db3e98;
+    --on-accent: #111111;
+    --secondary: #2a2226;
+    --background: #100c0f;
+    --foreground: #f0e8ec;
+    --on-primary: #111111;
+    --destructive: #e0504d;
+    --on-secondary: #f0e8ec;
+    --on-destructive: #ffffff;
+    --card-foreground: #f0e8ec;
+    --muted-foreground: #998b92;
+  }
+
+  /* Smooth theme transition — background, text, and borders animate on toggle */
+  html {
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  body {
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    accent-color: var(--accent);
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition: background-color 0.4s ease,
+                border-color 0.4s ease,
+                color 0.2s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html, body, *, *::before, *::after {
+      transition: none !important;
+    }
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--on-accent);
+  }
+
+  input, textarea, select {
+    caret-color: var(--accent);
+  }
+}
+
+@layer components {
+  .aurora-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: aurora-drift 20s ease-in-out infinite alternate;
+  }
+
+  .aurora-blob-1 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, oklch(0.62 0.21 350), transparent);
+    top: -200px;
+    left: -150px;
+  }
+
+  .aurora-blob-2 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, oklch(0.62 0.18 320), transparent);
+    top: -100px;
+    right: -100px;
+    animation-delay: -7s;
+  }
+
+  .aurora-blob-3 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, oklch(0.62 0.15 10), transparent);
+    top: 50px;
+    left: 30%;
+    animation-delay: -14s;
+  }
+
+  @keyframes aurora-drift {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -20px) scale(1.05); }
+    66% { transform: translate(-20px, 15px) scale(0.95); }
+    100% { transform: translate(10px, -10px) scale(1.02); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-blob {
+      animation: none;
+    }
+  }
+
+  .animate-card-in {
+    animation: card-in 0.35s ease-out both;
+  }
+
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.25s ease-out both;
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-card-in,
+    .animate-fade-in {
+      animation: none;
+    }
+  }
+}
