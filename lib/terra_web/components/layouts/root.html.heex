@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= assigns[:page_title] || "Terra — Survey Builder" %></title>
+    <link rel="stylesheet" href="/assets/app.css" />
+    <script defer src="/assets/app.js"></script>
+    <script>
+      // Prevent FOUC for dark mode
+      (function() {
+        const stored = localStorage.getItem('terra-theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-background text-foreground min-h-screen antialiased transition-colors duration-300">
+    <%= @inner_content %>
+  </body>
+</html>

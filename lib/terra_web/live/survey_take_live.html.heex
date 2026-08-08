@@ -1,0 +1,194 @@
+<div class="min-h-screen flex items-center justify-center bg-background">
+  <div class="max-w-lg w-full mx-auto px-4 sm:px-6 py-12">
+    <%= if @submitted do %>
+      <%!-- Thank you screen --%>
+      <div class="text-center animate-fade-in">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-foreground mb-2">Thank you!</h1>
+        <p class="text-muted-foreground mb-8">Your response has been recorded.</p>
+        <button
+          phx-click="restart"
+          class="inline-flex items-center rounded-lg bg-accent text-on-accent px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-colors"
+        >
+          Submit another response
+        </button>
+      </div>
+    <% else %>
+      <%!-- Progress bar --%>
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs text-muted-foreground">
+            Question <%= min(@current_idx + 1, length(@questions)) %> of <%= length(@questions) %>
+          </span>
+          <span class="text-xs text-muted-foreground">
+            <%= floor(min(@current_idx / max(length(@questions), 1), 1) * 100) %>% complete
+          </span>
+        </div>
+        <div class="h-1.5 rounded-full bg-secondary overflow-hidden">
+          <div
+            class="h-full rounded-full bg-accent transition-all duration-500 ease-out"
+            style={"width: #{floor(min(@current_idx / max(length(@questions), 1), 1) * 100)}%"}
+          >
+          </div>
+        </div>
+      </div>
+
+      <%= if @current_idx < length(@questions) do %>
+        <% question = Enum.at(@questions, @current_idx) %>
+        <%!-- Question card --%>
+        <div class="rounded-xl border border-border bg-card p-6 shadow-sm animate-fade-in">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs font-medium uppercase tracking-wider text-accent"><%= question.type %></span>
+            <%= if question.required do %>
+              <span class="text-xs text-destructive">* required</span>
+            <% end %>
+          </div>
+
+          <h2 class="text-lg font-semibold text-foreground mb-6"><%= question.title %></h2>
+
+          <%= if @error do %>
+            <p class="text-sm text-destructive mb-4"><%= @error %></p>
+          <% end %>
+
+          <%!-- Text input --%>
+          <%= if question.type == "text" do %>
+            <form phx-submit="answer" class="space-y-4">
+              <input type="hidden" name="question_id" value={question.id} />
+              <textarea
+                name="value"
+                rows="3"
+                placeholder="Type your answer..."
+                class="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors resize-y"
+              ><%= Map.get(@answers, question.id, "") %></textarea>
+              <div class="flex justify-end">
+                <button
+                  type="submit"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-accent text-on-accent px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-colors"
+                >
+                  <%= if @current_idx == length(@questions) - 1, do: "Submit", else: "Next" %>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          <% end %>
+
+          <%!-- Multiple choice --%>
+          <%= if question.type == "multiple_choice" do %>
+            <form phx-submit="answer" class="space-y-2">
+              <input type="hidden" name="question_id" value={question.id} />
+              <%= for option <- question.options do %>
+                <label class={[
+                  "flex items-center gap-3 rounded-lg border px-4 py-3 cursor-pointer transition-all duration-150",
+                  if(Map.get(@answers, question.id) == option.label, do: "border-accent bg-accent/10", else: "border-border bg-card hover:border-accent/30")
+                ]}>
+                  <input
+                    type="radio"
+                    name="value"
+                    value={option.label}
+                    checked={Map.get(@answers, question.id) == option.label}
+                    required={question.required}
+                    class="sr-only"
+                    phx-click="answer"
+                    phx-value-question_id={question.id}
+                    phx-value-value={option.label}
+                  />
+                  <span class={[
+                    "w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors",
+                    if(Map.get(@answers, question.id) == option.label, do: "border-accent", else: "border-muted-foreground/30")
+                  ]}>
+                    <span class={[
+                      "w-2 h-2 rounded-full transition-transform",
+                      if(Map.get(@answers, question.id) == option.label, do: "bg-accent scale-100", else: "scale-0")
+                    ]}>
+                    </span>
+                  </span>
+                  <span class="text-sm text-foreground flex-1"><%= option.label %></span>
+                </label>
+              <% end %>
+              <div class="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-accent text-on-accent px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-colors"
+                >
+                  <%= if @current_idx == length(@questions) - 1, do: "Submit", else: "Next" %>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          <% end %>
+
+          <%!-- Rating --%>
+          <%= if question.type == "rating" do %>
+            <form phx-submit="answer" class="space-y-4">
+              <input type="hidden" name="question_id" value={question.id} />
+              <div class="flex gap-2 justify-center">
+                <%= for i <- 1..5 do %>
+                  <label class={[
+                    "w-12 h-12 rounded-xl border-2 flex items-center justify-center text-lg font-semibold cursor-pointer transition-all duration-150",
+                    if(Map.get(@answers, question.id) == "#{i}", do: "border-accent bg-accent text-on-accent", else: "border-border bg-card text-foreground hover:border-accent/40")
+                  ]}>
+                    <input
+                      type="radio"
+                      name="value"
+                      value={"#{i}"}
+                      checked={Map.get(@answers, question.id) == "#{i}"}
+                      required={question.required}
+                      class="sr-only"
+                      phx-click="answer"
+                      phx-value-question_id={question.id}
+                      phx-value-value={"#{i}"}
+                    />
+                    <%= i %>
+                  </label>
+                <% end %>
+              </div>
+              <div class="flex justify-between text-xs text-muted-foreground px-2">
+                <span>Poor</span>
+                <span>Excellent</span>
+              </div>
+              <div class="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  class="inline-flex items-center gap-1.5 rounded-lg bg-accent text-on-accent px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-colors"
+                >
+                  <%= if @current_idx == length(@questions) - 1, do: "Submit", else: "Next" %>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          <% end %>
+        </div>
+      <% else %>
+        <%!-- All questions answered — show submit --%>
+        <div class="text-center animate-fade-in">
+          <h2 class="text-xl font-bold text-foreground mb-2">Ready to submit?</h2>
+          <p class="text-muted-foreground mb-8">Review your answers and submit your response.</p>
+          <button
+            phx-click="submit"
+            class="inline-flex items-center gap-2 rounded-lg bg-accent text-on-accent px-6 py-3 text-base font-semibold hover:opacity-90 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Submit Response
+          </button>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%!-- Powered by --%>
+    <p class="text-center text-xs text-muted-foreground mt-12">
+      Powered by Terra
+    </p>
+  </div>
+</div>

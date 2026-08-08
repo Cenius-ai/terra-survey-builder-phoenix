@@ -1,0 +1,71 @@
+<div class="min-h-screen flex items-center justify-center bg-background">
+  <div class="max-w-md w-full mx-auto px-4 sm:px-6 py-12">
+    <%!-- Aurora accent --%>
+    <div class="relative mb-10">
+      <div class="absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div class="aurora-blob aurora-blob-1" style="width:300px;height:300px;top:-120px;left:-80px"></div>
+        <div class="aurora-blob aurora-blob-2" style="width:250px;height:250px;top:-80px;right:-60px"></div>
+      </div>
+    </div>
+
+    <div class="text-center mb-8">
+      <h1 class="text-3xl font-bold text-foreground mb-2">Terra</h1>
+      <p class="text-muted-foreground">Sign in to manage your surveys</p>
+    </div>
+
+    <div class="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <%= if @error do %>
+        <div class="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-destructive" role="alert">
+          <%= @error %>
+        </div>
+      <% end %>
+
+      <form method="post" action="/login" class="space-y-4">
+        <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-foreground mb-1.5">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            autocomplete="email"
+            placeholder="cenius@cenius.ai"
+            class="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+          />
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-foreground mb-1.5">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            placeholder="········"
+            class="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-accent text-on-accent px-5 py-2.5 text-sm font-semibold hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 transition-colors"
+        >
+          Sign in
+        </button>
+      </form>
+
+      <p class="mt-6 text-center text-xs text-muted-foreground">
+        Demo: <span class="font-medium text-foreground">cenius@cenius.ai</span> / <span class="font-medium text-foreground">cenius</span>
+      </p>
+    </div>
+
+    <p class="mt-6 text-center">
+      <a href="/" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+        ← Back to surveys
+      </a>
+    </p>
+  </div>
+</div>

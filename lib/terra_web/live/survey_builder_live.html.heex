@@ -1,0 +1,367 @@
+<div class="min-h-screen">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <%!-- Header --%>
+    <div class="flex items-center gap-3 mb-8">
+      <a href="/" class="p-2 -ml-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </a>
+      <div class="flex-1">
+        <input
+          type="text"
+          value={@survey.title}
+          phx-blur="update_title"
+          name="title"
+          class="text-2xl font-bold bg-transparent border-b-2 border-transparent hover:border-border focus:border-accent focus:outline-none px-0 py-0.5 text-foreground w-full transition-colors"
+        />
+        <p class="text-sm text-muted-foreground mt-1">
+          <%= length(@questions) %> questions · <%= if @survey.published, do: "Published", else: "Draft" %>
+        </p>
+      <div class="flex items-center gap-2 mt-2">
+        <label class="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+          <input type="color" id="accent-picker" value="#db3e98" class="w-5 h-5 rounded border-0 p-0 cursor-pointer" title="Accent color" />
+          Accent
+        </label>
+        <button phx-click="toggle_preview" class="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors">
+          <%= if @preview_mode, do: "✎ Edit", else: "👁 Preview" %>
+        </button>
+      </div>
+      </div>
+    </div>
+
+    <%!-- Questions list --%>
+    <div id="questions-list" class="space-y-4 mb-8">
+    <button id="drag-reorder-trigger" phx-click="drag_reorder" phx-value-question_id="" phx-value-new_index="" class="hidden"></button>
+      <%= for {question, idx} <- Enum.with_index(@questions) do %>
+        <div draggable="true" class="cursor-grab active:cursor-grabbing rounded-xl border border-border bg-card overflow-hidden transition-all duration-200 animate-card-in" style={"animation-delay: #{idx * 50}ms"} data-question-id={question.id}>
+          <%!-- Question header --%>
+          <div class="flex items-start gap-3 p-4">
+            <div class="flex flex-col items-center gap-0.5 pt-0.5">
+              <button
+                phx-click="move_up"
+                phx-value-id={question.id}
+                class="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                disabled={idx == 0}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+              <span class="text-xs text-muted-foreground font-mono"><%= idx + 1 %></span>
+              <button
+                phx-click="move_down"
+                phx-value-id={question.id}
+                class="p-0.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                disabled={idx == length(@questions) - 1}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 11l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-medium uppercase tracking-wider text-accent"><%= question.type %></span>
+                <%= if question.required do %>
+                  <span class="text-xs text-destructive">* required</span>
+                <% end %>
+              </div>
+              <p class="text-sm font-medium text-foreground"><%= question.title %></p>
+
+              <%!-- Options for multiple_choice --%>
+              <%= if question.type == "multiple_choice" do %>
+                <div class="mt-3 space-y-1.5">
+                  <%= for option <- question.options do %>
+                    <div class="flex items-center gap-2 group/opt">
+                      <span class="w-3.5 h-3.5 rounded-full border-2 border-border flex-shrink-0"></span>
+                      <span class="text-sm text-muted-foreground flex-1"><%= option.label %></span>
+                      <%= if option.next_question_id do %>
+                        <% next_q = Enum.find(@questions, &(&1.id == option.next_question_id)) %>
+                        <span class="text-xs text-accent">
+                          → <%= if next_q, do: String.slice(next_q.title, 0, 20), else: "?" %>
+                        </span>
+                      <% end %>
+                      <button
+                        phx-click="delete_option"
+                        phx-value-id={option.id}
+                        class="p-0.5 rounded opacity-0 group-hover/opt:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-destructive transition-all"
+                        title="Remove option"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <%!-- Rating preview --%>
+              <%= if question.type == "rating" do %>
+                <div class="mt-2 flex gap-1">
+                  <%= for i <- 1..5 do %>
+                    <span class="w-7 h-7 rounded-lg border border-border flex items-center justify-center text-xs text-muted-foreground"><%= i %></span>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <%!-- Text preview --%>
+              <%= if question.type == "text" do %>
+                <div class="mt-2">
+                  <div class="h-9 rounded-lg border border-border bg-secondary/30 w-full"></div>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="flex items-center gap-0.5">
+              <button
+                phx-click="edit_question"
+                phx-value-id={question.id}
+                class="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                title="Edit question"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                phx-click="delete_question"
+                phx-value-id={question.id}
+                class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-muted-foreground hover:text-destructive transition-colors"
+                title="Delete question"
+                data-confirm="Delete this question?"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <%!-- Edit question form (inline) --%>
+          <%= if @editing_question && @editing_question.id == question.id do %>
+            <div class="border-t border-border bg-secondary/20 p-4 animate-fade-in">
+              <form phx-submit="update_question" class="space-y-3">
+                <input type="hidden" name="_id" value={question.id} />
+
+                <div>
+                  <label class="block text-xs font-medium text-foreground mb-1">Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={question.title}
+                    required
+                    class="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-medium text-foreground mb-1">Type</label>
+                  <select
+                    name="type"
+                    class="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+                  >
+                    <option value="text" selected={question.type == "text"}>Text</option>
+                    <option value="multiple_choice" selected={question.type == "multiple_choice"}>Multiple Choice</option>
+                    <option value="rating" selected={question.type == "rating"}>Rating</option>
+                  </select>
+                </div>
+
+                <label class="flex items-center gap-2 text-sm text-foreground">
+                  <input type="checkbox" name="required" value="true" checked={question.required} class="rounded border-border" />
+                  Required
+                </label>
+
+                <%!-- Option management for multiple_choice --%>
+                <%= if question.type == "multiple_choice" do %>
+                  <div class="border-t border-border pt-3 mt-3">
+                    <p class="text-xs font-medium text-foreground mb-2">Options & Branching</p>
+                    <div class="space-y-2">
+                      <%= for option <- question.options do %>
+                        <div class="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={option.label}
+                            phx-blur="update_option"
+                            phx-value-id={option.id}
+                            phx-value-next_question_id={if option.next_question_id, do: option.next_question_id, else: ""}
+                            name={"option_label_#{option.id}"}
+                            class="flex-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+                          />
+                          <select
+                            phx-change="update_option"
+                            phx-value-id={option.id}
+                            phx-value-label={option.label}
+                            name={"option_next_#{option.id}"}
+                            class="rounded-lg border border-border bg-card px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-colors min-w-0"
+                          >
+                            <option value="">Next: default</option>
+                            <%= for q <- @questions do %>
+                              <option value={q.id} selected={option.next_question_id == q.id}>
+                                → <%= String.slice(q.title, 0, 25) %>
+                              </option>
+                            <% end %>
+                          </select>
+                        </div>
+                      <% end %>
+                    </div>
+
+                    <form phx-submit="add_option" class="flex gap-2 mt-2">
+                      <input type="hidden" name="question_id" value={question.id} />
+                      <input
+                        type="text"
+                        name="label"
+                        placeholder="New option..."
+                        required
+                        class="flex-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+                      />
+                      <button type="submit" class="text-xs font-medium text-accent hover:opacity-80 px-2">Add</button>
+                    </form>
+                  </div>
+                <% end %>
+
+                <div class="flex gap-2 pt-1">
+                  <button type="submit" class="inline-flex items-center rounded-lg bg-accent text-on-accent px-3 py-1.5 text-xs font-semibold hover:opacity-90 transition-colors">
+                    Save
+                  </button>
+                  <button type="button" phx-click="cancel_edit" class="inline-flex items-center rounded-lg bg-secondary text-on-secondary px-3 py-1.5 text-xs font-semibold hover:opacity-80 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%!-- Add question --%>
+    <%= if @show_add_question do %>
+      <div class="rounded-xl border-2 border-dashed border-accent/40 bg-card p-5 mb-8 animate-fade-in">
+        <form phx-submit="add_question" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">Question title</label>
+            <input
+              type="text"
+              name="title"
+              placeholder="e.g. How satisfied are you?"
+              required
+              class="w-full rounded-lg border border-border bg-card px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-foreground mb-1">Question type</label>
+            <div class="flex gap-2">
+              <%= for {label, val, icon} <- [{"Text", "text", "T"}, {"Multiple Choice", "multiple_choice", "☰"}, {"Rating", "rating", "★"}] do %>
+                <button
+                  type="button"
+                  phx-click="select_type"
+                  phx-value-type={val}
+                  class={[
+                    "flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
+                    if(@new_question_type == val, do: "border-accent bg-accent/10 text-accent", else: "border-border bg-card text-foreground hover:border-accent/40")
+                  ]}
+                >
+                  <span class="mr-1.5"><%= icon %></span><%= label %>
+                </button>
+              <% end %>
+            </div>
+            <input type="hidden" name="type" value={@new_question_type} />
+          </div>
+
+          <div class="flex gap-2">
+            <button type="submit" class="inline-flex items-center rounded-lg bg-accent text-on-accent px-4 py-2 text-sm font-semibold hover:opacity-90 transition-colors">
+              Add Question
+            </button>
+            <button type="button" phx-click="cancel_edit" class="inline-flex items-center rounded-lg bg-secondary text-on-secondary px-4 py-2 text-sm font-semibold hover:opacity-80 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    <% else %>
+      <button
+        phx-click="toggle_add_question"
+        class="w-full rounded-xl border-2 border-dashed border-border hover:border-accent/40 bg-card/50 hover:bg-card p-5 text-sm text-muted-foreground hover:text-accent transition-all duration-200"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        Add a question
+      </button>
+    <% end %>
+
+
+    <%!-- Preview mode --%>
+    <%= if @preview_mode do %>
+      <div class="rounded-xl border-2 border-accent/30 bg-card p-6 mb-8 animate-fade-in">
+        <h3 class="text-sm font-semibold text-accent mb-4">📋 Survey Preview</h3>
+        <div class="space-y-6">
+          <%= for question <- @questions do %>
+            <div class="pb-4 border-b border-border last:border-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-medium uppercase tracking-wider text-accent"><%= question.type %></span>
+                <%= if question.required do %><span class="text-xs text-destructive">*</span><% end %>
+              </div>
+              <p class="text-sm font-medium text-foreground mb-3"><%= question.title %></p>
+              <%= if question.type == "text" do %>
+                <div class="h-10 rounded-lg border border-border bg-secondary/20 w-full"></div>
+              <% end %>
+              <%= if question.type == "multiple_choice" do %>
+                <div class="space-y-1.5">
+                  <%= for option <- question.options do %>
+                    <div class="flex items-center gap-2">
+                      <span class="w-3.5 h-3.5 rounded-full border-2 border-border flex-shrink-0"></span>
+                      <span class="text-sm text-muted-foreground"><%= option.label %></span>
+                      <%= if option.next_question_id do %>
+                        <% nq = Enum.find(@questions, &(&1.id == option.next_question_id)) %>
+                        <span class="text-xs text-accent">→ <%= if nq, do: String.slice(nq.title, 0, 20) %></span>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+              <%= if question.type == "rating" do %>
+                <div class="flex gap-1">
+                  <%= for i <- 1..5 do %>
+                    <span class="w-8 h-8 rounded-lg border border-border flex items-center justify-center text-xs text-muted-foreground"><%= i %></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+    <%!-- Bottom actions --%>
+    <div class="flex items-center justify-between mt-8 pt-6 border-t border-border">
+      <a href="/" class="text-sm text-muted-foreground hover:text-foreground transition-colors">
+        ← Back to surveys
+      </a>
+      <div class="flex gap-2">
+        <a
+          href={"/s/#{@survey.slug}"}
+          class="inline-flex items-center gap-1.5 rounded-lg bg-secondary text-on-secondary px-4 py-2 text-sm font-semibold hover:opacity-80 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          Preview
+        </a>
+        <a
+          href={"/surveys/#{@survey.id}/results"}
+          class="inline-flex items-center gap-1.5 rounded-lg bg-accent text-on-accent px-4 py-2 text-sm font-semibold hover:opacity-90 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Results
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
