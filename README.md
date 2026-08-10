@@ -82,7 +82,7 @@ _Full guide: [`USAGE.md`](USAGE.md)_
 
 ## Architecture
 
-Elixir/Phoenix application, delivered as a complete, runnable project (111 files). Top-level layout: `assets/`, `config/`, `cowlib-2.18.0/`, `lib/`, `priv/`. `install.sh` provisions dependencies and seeds demo data, so the app boots with something to show. Setup details live in [`INSTALL.md`](INSTALL.md).
+Elixir/Phoenix application, delivered as a complete, runnable project (98 files). Top-level layout: `assets/`, `config/`, `cowlib-2.18.0/`, `lib/`, `priv/`. `install.sh` provisions dependencies and seeds demo data, so the app boots with something to show. Setup details live in [`INSTALL.md`](INSTALL.md).
 
 ## FAQ
 
